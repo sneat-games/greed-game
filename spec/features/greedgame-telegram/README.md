@@ -5,7 +5,7 @@ status: Draft
 
 # Feature: GreedGame on Telegram (N-player, private + group, @GreedGameBot)
 
-> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/prizarena/greed-game/spec/features/greedgame-telegram?op=explore) | [Edit](https://specscore.studio/app/github.com/prizarena/greed-game/spec/features/greedgame-telegram?op=edit) | [Ask question](https://specscore.studio/app/github.com/prizarena/greed-game/spec/features/greedgame-telegram?op=ask) | [Request change](https://specscore.studio/app/github.com/prizarena/greed-game/spec/features/greedgame-telegram?op=request-change) |
+> [SpecScore.**Studio**](https://specscore.studio): | [Explore](https://specscore.studio/app/github.com/sneat-games/greed-game/spec/features/greedgame-telegram?op=explore) | [Edit](https://specscore.studio/app/github.com/sneat-games/greed-game/spec/features/greedgame-telegram?op=edit) | [Ask question](https://specscore.studio/app/github.com/sneat-games/greed-game/spec/features/greedgame-telegram?op=ask) | [Request change](https://specscore.studio/app/github.com/sneat-games/greed-game/spec/features/greedgame-telegram?op=request-change) |
 **Status:** Draft
 **Source Ideas:** greed-game-multiplayer
 
@@ -24,8 +24,8 @@ This document follows the [SpecScore feature specification](https://specscore.md
 ## Problem
 
 The Greed Game is the owner's original hidden-bid game — *punish greed, reward
-boldness*. Its legacy implementation (`prizarena/greed-game`) was a 2-player app on
-the dead `strongo/bots-framework` + `strongo/db` + the `prizarena/arena` battle infra,
+boldness*. Its legacy implementation (`sneat-games/greed-game`) was a 2-player app on
+the dead `strongo/bots-framework` + `strongo/db` + the `sneat-games/arena` battle infra,
 tied to a web SPA. We want to bring it to the current Sneat bot stack as a **real
 multiplayer game**: N players, private *and* group play, on modern Firestore/dalgo
 state. Unlike the callback-data mini-games (Reversi, RPS), GreedGame's hidden bids
@@ -120,7 +120,7 @@ player's net + updated standings. Play then continues to the next round.
 ## Not Doing / Out of Scope (v1)
 
 - Real-money / tokens with monetary value — play tokens only.
-- The legacy `prizarena/arena` battle/tournament/leaderboard infra and the old web SPA.
+- The legacy `sneat-games/arena` battle/tournament/leaderboard infra and the old web SPA.
 - Matchmaking with strangers (the legacy "play a stranger") — invites + groups only.
 - AI/robot players (the game is human-vs-human; a practice bot could come later).
 - Web/other-messenger clients — Telegram only for now.
