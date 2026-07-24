@@ -14,14 +14,15 @@ status: Specifying
 
 ## Problem Statement
 
-How might we bring the Greed Game (hidden-bid, punish-greed/reward-boldness) to Telegram as an N-player game playable in private invites and group chats?
+How might we bring the Greed Game (hidden-bid, punish-greed/reward-courage) to Telegram as an N-player game playable in private invites and group chats?
 
 ## Context
 
 The Greed Game is the owner's original hidden-bid game: two (now N) players secretly
-bid; the money that changes hands is always the **lower** bid; the lower bidder wins
-**unless** the higher bid is **> 2×** the lower, in which case the bold high-bidder
-wins. It punishes moderate greed and rewards boldness. Its legacy build
+bid; the money that changes hands is always the **lower** bid; the **higher** bidder
+wins **unless** the higher bid is **> 2×** the lower, in which case the greedy higher
+bidder is punished and the **lower** bidder wins. It rewards courage and punishes
+greed. Its legacy build
 (`sneat-games/greed-game`) is a dead 2-player app on `strongo/bots-framework` +
 `strongo/db` + `sneat-games/arena` with a web SPA. SneatBot already has a `/games`
 menu (Reversi, RPS); GreedGame is the next candidate, but — unlike those callback-data
@@ -30,9 +31,10 @@ games — its **hidden bids require server-side state**.
 ## Recommended Direction
 
 Rebuild GreedGame on the current Sneat stack as a **true multiplayer** game.
-Generalize to **N players via pairwise resolution** (your one bid duels every other
-player; net the results — zero-sum, and actually richer: when everyone bids low the
-lowest sweeps, which is exactly what makes a bold >2× leap pay). Keep all state in
+Generalize to **N players via pairwise resolution with a per-player loss cap** (your
+one bid duels every other player; net the results — zero-sum, and richer with N:
+bidding higher wins the duel, but a *greedy* >2× overbid is punished, so nerve pays
+and greed doesn't). Keep all state in
 **Firestore/dalgo sessions** with **secret per-player bids**.
 
 Give it a dedicated **@GreedGameBot** (owns invites + DM bid entry + notifications),
@@ -74,7 +76,7 @@ leaking** before resolution.
 | Must-be-true | Hidden bids can be collected privately (DM keypad/typed) while a group's dedicated status message shows only counts — i.e. no bid leaks. | Build the group flow; verify the group message never carries a value and bid entry is DM-only. |
 | Must-be-true | Pairwise N-player resolution is understandable enough for players via a per-duel results screen. | Play-test 3–4 players; confirm the reveal/standings read clearly. |
 | Should-be-true | Players will start a DM with @GreedGameBot to bid (needed for secrecy) rather than abandon. | Watch join→bid conversion in group games. |
-| Might-be-true | N-player greed stays fun and non-degenerate (bold play remains worthwhile as N grows). | Play-test with 4–6; check bold leaps still pay. |
+| Might-be-true | N-player greed stays fun and non-degenerate (courage stays worthwhile without tipping into punished greed as N grows). | Play-test with 4–6; check higher bids pay without over-bidding. |
 
 ## SpecScore Integration
 

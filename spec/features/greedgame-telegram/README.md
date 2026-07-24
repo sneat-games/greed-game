@@ -38,16 +38,23 @@ state. Unlike the callback-data mini-games (Reversi, RPS), GreedGame's hidden bi
 #### REQ: duel-rule
 
 A single duel between two integer bids (each ≥ 1) MUST resolve as: the amount that
-changes hands is always **L = the lower bid**; the **lower** bidder wins (+L, other
-−L) **unless** the higher bid is strictly **> 2× the lower** ("bold"), in which case
-the **higher** bidder wins. Equal bids draw (no transfer). Every duel is zero-sum.
+changes hands is always **L = the lower bid**; the **higher** bidder wins (+L, other
+−L — *courage*) **unless** the higher bid is strictly **> 2× the lower** (*greed*), in
+which case the greedy higher bidder is punished and the **lower** bidder wins instead.
+Equal bids draw (no transfer). Every duel is zero-sum, and neither player can win or
+lose more than their own bid against any one opponent.
 
 #### REQ: pairwise-resolution
 
-A round of N players (N ≥ 2) MUST resolve **pairwise**: each player's single bid
-duels every other player under REQ:duel-rule, and their round result is the **sum**
-of their pairwise deltas. The whole round MUST be zero-sum. Rules come from the
-`greedplay` engine; the bot layer MUST NOT re-implement them.
+A round of N players (N ≥ 2) MUST resolve **pairwise, under two caps** (from the
+`greedplay` engine — the bot layer MUST NOT re-implement it): each player's single bid
+duels every other player under REQ:duel-rule. **(1) Loss cap** — a player's *total*
+loss in a round MUST NOT exceed their own bid; when their summed debts exceed it they
+pay exactly their bid, split among the players who beat them in proportion to those
+winners' bids (largest-remainder rounding). **(2) Win cap** — a winner takes at most
+their own bid from any *one* opponent (automatic: the duel stake is the lower bid),
+but MAY net more than their bid across several. The round MUST be zero-sum, and each
+bid MUST be ≥ (players − 1) so a capped bid can always be split.
 
 ### Sessions & secret state
 
@@ -131,15 +138,16 @@ player's net + updated standings. Play then continues to the next round.
 
 **Given** two bids
 **When** the duel resolves
-**Then** the transfer is the lower bid; the lower bidder wins unless the higher bid is
-> 2× the lower (then the higher wins); equal bids draw; and the two deltas sum to zero.
+**Then** the transfer is the lower bid; the **higher** bidder wins unless the higher
+bid is > 2× the lower (then the **lower** bidder wins); equal bids draw; and the two
+deltas sum to zero.
 
 ### AC: round-is-pairwise-and-zero-sum (verifies REQ:pairwise-resolution)
 
-**Given** N players' bids (e.g. [10, 15, 40])
+**Given** N players' bids (e.g. [10, 15, 40], or [10, 11, 12] where the loss cap bites)
 **When** the round resolves
-**Then** each player's delta is the sum of their pairwise duels (e.g. [0, −25, +25])
-and all deltas sum to zero.
+**Then** deltas are computed pairwise under the two caps (e.g. [0, +25, −25] and
+[−10, −6, +16] respectively) and all deltas sum to zero.
 
 ### AC: bids-stay-secret (verifies REQ:server-side-sessions)
 
