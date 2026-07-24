@@ -1,3 +1,0 @@
-Host: www.greed-games.com
-User-agent: *
-Disallow: /api/

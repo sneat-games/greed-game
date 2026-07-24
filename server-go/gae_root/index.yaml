@@ -1,6 +1,0 @@
-indexes:
-
-- kind: Contestant
-  properties:
-  - name: TournamentID
-  - name: Stranger
