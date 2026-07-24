@@ -22,8 +22,8 @@ The Greed Game is the owner's original hidden-bid game: two (now N) players secr
 bid; the money that changes hands is always the **lower** bid; the lower bidder wins
 **unless** the higher bid is **> 2×** the lower, in which case the bold high-bidder
 wins. It punishes moderate greed and rewards boldness. Its legacy build
-(`prizarena/greed-game`) is a dead 2-player app on `strongo/bots-framework` +
-`strongo/db` + `prizarena/arena` with a web SPA. SneatBot already has a `/games`
+(`sneat-games/greed-game`) is a dead 2-player app on `strongo/bots-framework` +
+`strongo/db` + `sneat-games/arena` with a web SPA. SneatBot already has a `/games`
 menu (Reversi, RPS); GreedGame is the next candidate, but — unlike those callback-data
 games — its **hidden bids require server-side state**.
 
@@ -62,7 +62,7 @@ leaking** before resolution.
 ## Not Doing (and Why)
 
 - Real-money value / payments — play tokens only; keep it a game.
-- Legacy `prizarena/arena` tournament/leaderboard infra + the old web SPA — superseded.
+- Legacy `sneat-games/arena` tournament/leaderboard infra + the old web SPA — superseded.
 - Stranger matchmaking — invites + groups only for v1.
 - AI/robot players — the game is human-vs-human; a practice bot is a possible later add.
 - Web / other messengers — Telegram only for now.
