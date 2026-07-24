@@ -8,27 +8,27 @@ import (
 
 // --- Duel -------------------------------------------------------------------
 
-func TestDuel_CloseCase_LowerWins(t *testing.T) {
-	// 15 <= 2*10, so the lower (10) bidder wins +10; higher (15) loses.
+func TestDuel_CourageCase_HigherWins(t *testing.T) {
+	// 15 <= 2*10, so the higher (courageous) bidder wins +10; the 10-bidder loses.
 	da, db := Duel(10, 15)
-	if da != 10 || db != -10 {
-		t.Fatalf("Duel(10,15) = (%d,%d), want (10,-10)", da, db)
-	}
-}
-
-func TestDuel_BoldCase_HigherWins(t *testing.T) {
-	// 25 > 2*10, so the higher (bold) bidder wins; the 10-bidder is -10.
-	da, db := Duel(10, 25)
 	if da != -10 || db != 10 {
-		t.Fatalf("Duel(10,25) = (%d,%d), want (-10,10)", da, db)
+		t.Fatalf("Duel(10,15) = (%d,%d), want (-10,10)", da, db)
 	}
 }
 
-func TestDuel_LowerWinsWhenHigherIsFirstArg(t *testing.T) {
-	// 6 <= 2*3, so the lower (3) bidder wins +3; the 6-bidder loses.
+func TestDuel_GreedCase_LowerWins(t *testing.T) {
+	// 25 > 2*10, so the higher bid is greedy and is punished: the lower (10) wins.
+	da, db := Duel(10, 25)
+	if da != 10 || db != -10 {
+		t.Fatalf("Duel(10,25) = (%d,%d), want (10,-10)", da, db)
+	}
+}
+
+func TestDuel_HigherWinsWhenHigherIsFirstArg(t *testing.T) {
+	// 6 <= 2*3, so the higher (6) bidder wins +3; the 3-bidder loses.
 	da, db := Duel(6, 3)
-	if da != -3 || db != 3 {
-		t.Fatalf("Duel(6,3) = (%d,%d), want (-3,3)", da, db)
+	if da != 3 || db != -3 {
+		t.Fatalf("Duel(6,3) = (%d,%d), want (3,-3)", da, db)
 	}
 }
 
@@ -39,18 +39,18 @@ func TestDuel_Draw(t *testing.T) {
 	}
 }
 
-// The exactly-2x boundary: H == 2L is NOT bold (lower wins); H == 2L+1 IS bold
-// (higher wins). Verify the winner flips across the boundary.
+// The exactly-2x boundary: H == 2L is NOT greedy (higher wins); H == 2L+1 IS
+// greedy (lower wins). Verify the winner flips across the boundary.
 func TestDuel_ExactlyDoubleBoundary(t *testing.T) {
-	// H == 2L: not bold, lower (10) wins.
+	// H == 2L: not greedy, higher (20) wins.
 	da, db := Duel(10, 20)
-	if da != 10 || db != -10 {
-		t.Fatalf("Duel(10,20) [H==2L] = (%d,%d), want (10,-10) lower wins", da, db)
-	}
-	// H == 2L+1: bold, higher (21) wins, lower (10) loses.
-	da, db = Duel(10, 21)
 	if da != -10 || db != 10 {
-		t.Fatalf("Duel(10,21) [H==2L+1] = (%d,%d), want (-10,10) higher wins", da, db)
+		t.Fatalf("Duel(10,20) [H==2L] = (%d,%d), want (-10,10) higher wins", da, db)
+	}
+	// H == 2L+1: greedy, lower (10) wins.
+	da, db = Duel(10, 21)
+	if da != 10 || db != -10 {
+		t.Fatalf("Duel(10,21) [H==2L+1] = (%d,%d), want (10,-10) lower wins", da, db)
 	}
 }
 
@@ -79,13 +79,13 @@ func TestDuelDetail(t *testing.T) {
 		a, b int
 		want DuelResult
 	}{
-		{10, 15, DuelResult{Transfer: 10, Winner: First, Bold: false}}, // close, lower(a) wins
-		{10, 25, DuelResult{Transfer: 10, Winner: Second, Bold: true}}, // bold, higher(b) wins
-		{6, 3, DuelResult{Transfer: 3, Winner: Second, Bold: false}},   // close, lower(b) wins
-		{25, 10, DuelResult{Transfer: 10, Winner: First, Bold: true}},  // bold, higher(a) wins
-		{10, 10, DuelResult{Transfer: 0, Winner: Draw, Bold: false}},   // draw
-		{10, 20, DuelResult{Transfer: 10, Winner: First, Bold: false}}, // boundary H==2L, lower(a) wins
-		{10, 21, DuelResult{Transfer: 10, Winner: Second, Bold: true}}, // boundary H==2L+1, higher(b) wins
+		{10, 15, DuelResult{Transfer: 10, Winner: Second, Greedy: false}}, // courage, higher(b) wins
+		{10, 25, DuelResult{Transfer: 10, Winner: First, Greedy: true}},   // greed, lower(a) wins
+		{6, 3, DuelResult{Transfer: 3, Winner: First, Greedy: false}},     // courage, higher(a) wins
+		{25, 10, DuelResult{Transfer: 10, Winner: Second, Greedy: true}},  // greed, lower(b) wins
+		{10, 10, DuelResult{Transfer: 0, Winner: Draw, Greedy: false}},    // draw
+		{10, 20, DuelResult{Transfer: 10, Winner: Second, Greedy: false}}, // boundary H==2L, higher(b) wins
+		{10, 21, DuelResult{Transfer: 10, Winner: First, Greedy: true}},   // boundary H==2L+1, lower(a) wins
 	}
 	for _, c := range cases {
 		got := DuelDetail(c.a, c.b)
@@ -95,7 +95,7 @@ func TestDuelDetail(t *testing.T) {
 	}
 }
 
-func TestDuelDetail_BoldIffHigherWon(t *testing.T) {
+func TestDuelDetail_GreedyIffLowerWon(t *testing.T) {
 	rng := rand.New(rand.NewSource(2))
 	for i := 0; i < 5000; i++ {
 		a := rng.Intn(500) + 1
@@ -111,7 +111,7 @@ func TestDuelDetail_BoldIffHigherWon(t *testing.T) {
 		}
 		// Transfer is always min on a non-draw, 0 on a draw.
 		if a == b {
-			if got.Winner != Draw || got.Transfer != 0 || got.Bold {
+			if got.Winner != Draw || got.Transfer != 0 || got.Greedy {
 				t.Fatalf("DuelDetail(%d,%d) draw wrong: %+v", a, b, got)
 			}
 			continue
@@ -129,13 +129,14 @@ func TestDuelDetail_BoldIffHigherWon(t *testing.T) {
 		default:
 			t.Fatalf("DuelDetail(%d,%d) unexpected Draw", a, b)
 		}
-		higherWon := winVal == hi
-		if got.Bold != higherWon {
-			t.Fatalf("DuelDetail(%d,%d): Bold=%v but higherWon=%v (%+v)", a, b, got.Bold, higherWon, got)
+		// Greed punishes the higher bidder, so Greedy iff the LOWER value won.
+		lowerWon := winVal == lo
+		if got.Greedy != lowerWon {
+			t.Fatalf("DuelDetail(%d,%d): Greedy=%v but lowerWon=%v (%+v)", a, b, got.Greedy, lowerWon, got)
 		}
-		// Bold must be exactly the >2x condition.
-		if got.Bold != (hi > GreedFactor*lo) {
-			t.Fatalf("DuelDetail(%d,%d): Bold=%v, want hi>2*lo=%v", a, b, got.Bold, hi > GreedFactor*lo)
+		// Greedy must be exactly the >2x condition.
+		if got.Greedy != (hi > GreedFactor*lo) {
+			t.Fatalf("DuelDetail(%d,%d): Greedy=%v, want hi>2*lo=%v", a, b, got.Greedy, hi > GreedFactor*lo)
 		}
 	}
 }
@@ -143,13 +144,29 @@ func TestDuelDetail_BoldIffHigherWon(t *testing.T) {
 // --- Resolve ----------------------------------------------------------------
 
 func TestResolve_Oracle(t *testing.T) {
+	// A=10,B=15,C=40: B beats A (courage); A beats C and B beats C (both greed).
+	// No loss cap binds, so it reduces to plain pairwise netting.
 	deltas, err := Resolve([]int{10, 15, 40})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []int{0, -25, 25}
+	want := []int{0, 25, -25}
 	if !equalInts(deltas, want) {
 		t.Fatalf("Resolve([10,15,40]) = %v, want %v", deltas, want)
+	}
+}
+
+func TestResolve_LossCapOracle(t *testing.T) {
+	// The canonical capped example: A=10,B=11,C=12. C beats A and B (courage);
+	// B beats A (courage). A owes 10+10 > its bid 10, so A pays exactly 10 split
+	// ~evenly (11:12) as 5/5 to B and C; B owes C 11 (== its bid, uncapped).
+	deltas, err := Resolve([]int{10, 11, 12})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []int{-10, -6, 16} // A -10; B +5-11; C +5+11
+	if !equalInts(deltas, want) {
+		t.Fatalf("Resolve([10,11,12]) = %v, want %v", deltas, want)
 	}
 }
 
@@ -158,13 +175,14 @@ func TestResolve_HandComputedTables(t *testing.T) {
 		bids []int
 		want []int
 	}{
-		{[]int{1, 1}, []int{0, 0}},               // draw
-		{[]int{5, 5, 5}, []int{0, 0, 0}},         // all draws
-		{[]int{3, 6}, []int{3, -3}},              // close, lower(3) wins
-		{[]int{2, 5}, []int{-2, 2}},              // bold, higher(5) wins
-		{[]int{10, 20}, []int{10, -10}},          // boundary H==2L, lower wins
-		{[]int{10, 15, 40}, []int{0, -25, 25}},   // the oracle
-		{[]int{1, 2, 3, 4}, []int{-1, 3, 2, -4}}, // 4-player hand-computed
+		{[]int{1, 1}, []int{0, 0}},             // draw
+		{[]int{5, 5, 5}, []int{0, 0, 0}},       // all draws
+		{[]int{3, 6}, []int{-3, 3}},            // courage, higher(6) wins
+		{[]int{2, 5}, []int{2, -2}},            // greed, lower(2) wins
+		{[]int{10, 20}, []int{-10, 10}},        // boundary H==2L, higher wins
+		{[]int{10, 15, 40}, []int{0, 25, -25}}, // the oracle
+		{[]int{10, 11, 12}, []int{-10, -6, 16}}, // loss-cap example
+		{[]int{3, 4, 5, 6}, []int{-3, -3, -2, 8}}, // 4-player, A & B both loss-capped
 	}
 	for _, c := range cases {
 		got, err := Resolve(c.bids)
@@ -173,6 +191,48 @@ func TestResolve_HandComputedTables(t *testing.T) {
 		}
 		if !equalInts(got, c.want) {
 			t.Errorf("Resolve(%v) = %v, want %v", c.bids, got, c.want)
+		}
+	}
+}
+
+func TestResolve_LossNeverExceedsBid(t *testing.T) {
+	// Cap #1: no player ever loses more than their own bid in a round.
+	rng := rand.New(rand.NewSource(6))
+	for i := 0; i < 5000; i++ {
+		n := rng.Intn(7) + 2 // 2..8 players
+		bids := make([]int, n)
+		for j := range bids {
+			bids[j] = rng.Intn(1000) + (n - 1) // always >= players-1
+		}
+		deltas, err := Resolve(bids)
+		if err != nil {
+			t.Fatalf("Resolve(%v) error: %v", bids, err)
+		}
+		for j, d := range deltas {
+			if -d > bids[j] {
+				t.Fatalf("Resolve(%v): player %d lost %d, exceeds bid %d (deltas=%v)", bids, j, -d, bids[j], deltas)
+			}
+		}
+	}
+}
+
+func TestResolve_PerOpponentWinNeverExceedsWinnerBid(t *testing.T) {
+	// Cap #2: from any single opponent a winner takes at most their own bid.
+	// The per-duel stake is min(a,b), which is <= the winner's bid by construction.
+	rng := rand.New(rand.NewSource(7))
+	for i := 0; i < 5000; i++ {
+		a := rng.Intn(10_000) + 1
+		b := rng.Intn(10_000) + 1
+		det := DuelDetail(a, b)
+		if det.Winner == Draw {
+			continue
+		}
+		winnerBid := a
+		if det.Winner == Second {
+			winnerBid = b
+		}
+		if det.Transfer > winnerBid {
+			t.Fatalf("DuelDetail(%d,%d): stake %d exceeds winner bid %d", a, b, det.Transfer, winnerBid)
 		}
 	}
 }
@@ -199,7 +259,7 @@ func TestResolve_ZeroSumRandom(t *testing.T) {
 		n := rng.Intn(8) + 2 // 2..9 players
 		bids := make([]int, n)
 		for j := range bids {
-			bids[j] = rng.Intn(1_000_000) + 1
+			bids[j] = rng.Intn(1_000_000) + n // always >= players-1
 		}
 		deltas, err := Resolve(bids)
 		if err != nil {
@@ -216,8 +276,9 @@ func TestResolve_ZeroSumRandom(t *testing.T) {
 }
 
 func TestResolve_LargeBidsZeroSum(t *testing.T) {
-	// Up to ~1e9 bids across many players: int is 64-bit, no overflow, zero-sum holds.
-	bids := []int{1_000_000_000, 999_999_999, 500_000_000, 1, 2_000_000_000}
+	// Up to ~2e9 bids: int is 64-bit, apportion's total*weight stays < 9.2e18, no
+	// overflow, zero-sum holds.
+	bids := []int{1_000_000_000, 999_999_999, 500_000_000, 4, 2_000_000_000}
 	deltas, err := Resolve(bids)
 	if err != nil {
 		t.Fatalf("Resolve error: %v", err)
@@ -244,6 +305,14 @@ func TestResolve_Errors(t *testing.T) {
 	if _, err := Resolve([]int{-1, 5}); !errors.Is(err, ErrInvalidBid) {
 		t.Errorf("Resolve([-1,5]) err=%v, want ErrInvalidBid", err)
 	}
+	// Min-bid rule: with 3 players every bid must be >= 2.
+	if _, err := Resolve([]int{3, 1, 5}); !errors.Is(err, ErrInvalidBid) {
+		t.Errorf("Resolve([3,1,5]) err=%v, want ErrInvalidBid (bid 1 < players-1)", err)
+	}
+	// A bid exactly at players-1 is valid.
+	if _, err := Resolve([]int{2, 2, 2}); err != nil {
+		t.Errorf("Resolve([2,2,2]) err=%v, want nil (2 == players-1)", err)
+	}
 }
 
 // --- ResolveMatrix ----------------------------------------------------------
@@ -254,16 +323,16 @@ func TestResolveMatrix_DeltasMatchResolve(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveMatrix error: %v", err)
 	}
-	if !equalInts(deltas, []int{0, -25, 25}) {
-		t.Fatalf("ResolveMatrix deltas=%v, want [0,-25,25]", deltas)
+	if !equalInts(deltas, []int{0, 25, -25}) {
+		t.Fatalf("ResolveMatrix deltas=%v, want [0,25,-25]", deltas)
 	}
 	// One entry per i<j pair: C(3,2) = 3.
 	if len(duels) != 3 {
 		t.Fatalf("len(duels)=%d, want 3", len(duels))
 	}
-	// Spot-check a pair: 15 vs 40 -> 40 bold wins (Second), transfer 15.
+	// Spot-check a pair: 15 vs 40 -> 40 is greedy, lower(15=First) wins, stake 15.
 	got := duels[[2]int{1, 2}]
-	want := DuelResult{Transfer: 15, Winner: Second, Bold: true}
+	want := DuelResult{Transfer: 15, Winner: First, Greedy: true}
 	if got != want {
 		t.Fatalf("duels[1,2]=%+v, want %+v", got, want)
 	}
@@ -294,7 +363,7 @@ func TestResolveMatrix_ConsistentWithResolve(t *testing.T) {
 		n := rng.Intn(6) + 2
 		bids := make([]int, n)
 		for j := range bids {
-			bids[j] = rng.Intn(100) + 1
+			bids[j] = rng.Intn(100) + n // always >= players-1
 		}
 		d1, err := Resolve(bids)
 		if err != nil {
@@ -306,6 +375,59 @@ func TestResolveMatrix_ConsistentWithResolve(t *testing.T) {
 		}
 		if !equalInts(d1, d2) {
 			t.Fatalf("Resolve=%v vs ResolveMatrix=%v for %v", d1, d2, bids)
+		}
+	}
+}
+
+// --- apportion --------------------------------------------------------------
+
+func TestApportion_SumsToTotalAndProportional(t *testing.T) {
+	cases := []struct {
+		total   int
+		weights []int
+		want    []int
+	}{
+		{10, []int{11, 12}, []int{5, 5}},   // near-equal -> 5/5
+		{3, []int{4, 5, 6}, []int{1, 1, 1}}, // A's split in [3,4,5,6]
+		{4, []int{5, 6}, []int{2, 2}},       // B's split in [3,4,5,6]
+		{7, []int{1, 1}, []int{4, 3}},       // odd leftover to first (tie on weight -> lower idx)
+		{5, []int{3}, []int{5}},             // single recipient takes all
+		{0, []int{2, 3}, []int{0, 0}},       // nothing to split
+	}
+	for _, c := range cases {
+		got := apportion(c.total, c.weights)
+		if !equalInts(got, c.want) {
+			t.Errorf("apportion(%d,%v) = %v, want %v", c.total, c.weights, got, c.want)
+		}
+		sum := 0
+		for _, s := range got {
+			sum += s
+		}
+		if sum != c.total {
+			t.Errorf("apportion(%d,%v) sums to %d, want %d", c.total, c.weights, sum, c.total)
+		}
+	}
+}
+
+func TestApportion_RandomSumsToTotal(t *testing.T) {
+	rng := rand.New(rand.NewSource(8))
+	for i := 0; i < 5000; i++ {
+		k := rng.Intn(6) + 1
+		weights := make([]int, k)
+		for j := range weights {
+			weights[j] = rng.Intn(50) + 1
+		}
+		total := rng.Intn(500)
+		got := apportion(total, weights)
+		sum := 0
+		for _, s := range got {
+			sum += s
+			if s < 0 {
+				t.Fatalf("apportion(%d,%v) gave negative share %d", total, weights, s)
+			}
+		}
+		if sum != total {
+			t.Fatalf("apportion(%d,%v) sums to %d, want %d", total, weights, sum, total)
 		}
 	}
 }
