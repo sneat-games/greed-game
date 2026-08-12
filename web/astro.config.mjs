@@ -40,6 +40,17 @@ export default defineConfig({
         // beyond that (vs-Bot is fully client-side; vs-Friend needs the
         // network by nature — see docs/DESIGN.md's Offline section).
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
+        // registerType: "autoUpdate" above does NOT apply these when
+        // injectRegister is false — that option only takes effect inside
+        // the registration code vite-plugin-pwa would otherwise inject, and
+        // we register by hand. Set explicitly so the worker self-activates:
+        // skipWaiting + clientsClaim let a new worker take over on its own
+        // next install/activate, with no cooperation from page JS needed —
+        // which matters because a client already stuck behind an old
+        // worker never runs the new page JS that would otherwise ask it to
+        // update (the old worker is exactly what keeps serving the old JS).
+        skipWaiting: true,
+        clientsClaim: true,
       },
       devOptions: { enabled: false },
     }),

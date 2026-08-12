@@ -79,7 +79,7 @@ test.describe("with reduced motion", () => {
   // collapse to zero for the same visitor. The risk with collapsing waits is
   // that the reveal stops being a step at all — so this plays a whole match
   // that way and checks the verdict, the log and the banner all still land.
-  test.use({ reducedMotion: "reduce" });
+  test.use({ contextOptions: { reducedMotion: "reduce" } });
 
   test("a full match still plays, reveals and finishes", async ({ page }) => {
     await page.goto("/");

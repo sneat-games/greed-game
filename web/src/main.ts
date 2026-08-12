@@ -24,6 +24,7 @@ import {
   roomIdFromLocation,
   createThemeToggle,
   createGamesFooter,
+  registerServiceWorker,
 } from "@sneat/game-kit";
 import { renderGreedMenu } from "./ui/menu";
 import { runVsBot } from "./ui/vs-bot";
@@ -50,7 +51,14 @@ export async function bootstrap(): Promise<void> {
   wireHomeLink();
   wireHeaderActions();
   wireFooter();
-  void maybeRegisterServiceWorker();
+  // The built service worker (see astro.config.mjs's `injectRegister: false`)
+  // registers ONLY on this game's real deploy surface: never inside a
+  // CrazyGames/itch.io iframe, and deliberately NOT on localhost either. A
+  // worker precaches the built asset hashes, so on a dev machine it keeps
+  // serving the PREVIOUS build after a rebuild — a stale-preview trap that
+  // makes a landed fix look broken. The kit's default gate
+  // (`hostname.endsWith(".sneat.games")`) implements exactly this.
+  void registerServiceWorker();
 
   const root = document.getElementById("game")!;
   root.innerHTML = "";
@@ -119,27 +127,4 @@ function wireHomeLink(): void {
     clearRoomFragment();
     window.location.reload();
   });
-}
-
-/**
- * The built service worker (see astro.config.mjs's `injectRegister: false`)
- * registers ONLY on this game's real deploy surface: never inside a
- * CrazyGames/itch.io iframe, and deliberately NOT on localhost either. A
- * worker precaches the built asset hashes, so on a dev machine it keeps
- * serving the PREVIOUS build after a rebuild — a stale-preview trap that
- * makes a landed fix look broken. Offline behaviour is a production concern;
- * test it against a real *.sneat.games deploy.
- */
-function shouldRegisterServiceWorker(): boolean {
-  return window.location.hostname.endsWith(".sneat.games");
-}
-
-async function maybeRegisterServiceWorker(): Promise<void> {
-  if (!shouldRegisterServiceWorker()) return;
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
-  try {
-    await navigator.serviceWorker.register("/sw.js");
-  } catch (e) {
-    console.warn("[pwa] service worker registration failed", e);
-  }
 }
