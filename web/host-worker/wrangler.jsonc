@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Worker names follow `<game>-game` (docs/DESIGN.md). This repo is already
+  // `greed-game`, so the worker is `greed-game` — NOT `greed-game-game`.
+  "name": "greed-game",
+  "main": "index.ts",
+  "compatibility_date": "2025-08-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    {
+      // The custom domain is `greed.sneat.games` (founder, 2026-08-12), not
+      // greed-game.sneat.games — the worker name and the hostname differ
+      // here, unlike the other kit games.
+      "pattern": "greed.sneat.games",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,94 @@
+# CI for the web/ workspace. Mirrors the sibling kit games' web-ci.yml
+# (`npm ci` first and unforgiving — a lockfile that can't install from a
+# clean checkout is the failure this job exists to catch), plus a dedicated
+# e2e job: Playwright needs its own browser download step, and keeping it
+# separate means a typecheck/lint/test/build failure reports fast without
+# waiting on browser installs and the full Playwright suite.
+#
+# The Go engine has its own workflow (ci.yml); these paths filters keep the
+# two from running each other's jobs.
+
+name: Web CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-ci.yml'
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  web:
+    name: typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install from the lockfile
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 1
+
+  e2e:
+    name: e2e (Playwright)
+    needs: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install from the lockfile
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 5

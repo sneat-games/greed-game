@@ -1,0 +1,526 @@
+/*
+ * The Greed Game's own surface — the part game-kit deliberately leaves to
+ * each game (see match-shell.ts: "board rendering is 100% game-owned").
+ * There is no board here: the game is two hidden numbers meeting, so what
+ * occupies the board slot is a table with two bid cards on it.
+ *
+ * Every colour is a theme.css token, so this is correct in both palettes and
+ * follows a live theme-toggle switch with no JS. Every animation is inside a
+ * `@media (prefers-reduced-motion: no-preference)` block, so a reduced-motion
+ * visitor gets the same information with none of the movement (the kit's own
+ * blanket rule shortens durations; declaring them only under
+ * no-preference means they never start in the first place).
+ */
+
+:root {
+  /* Per-game accent (docs/DESIGN.md §Design system): gold — the colour of
+     the coins the whole game is about. */
+  --accent: #ca8a04;
+  --accent-hover: #a16207;
+  /* White on this gold is only ~3:1. Buttons use near-black text instead,
+     which clears AA comfortably in both themes. */
+  --accent-contrast: #241a02;
+
+  /* theme.css's `.match` grid sizes its left column from `--board-width`,
+     computed by default from a 3-cell tic-tac-toe board. This game's
+     "board" is the duel table, not that cell-count formula, so it must set
+     the variable itself — otherwise the grid column stays ~330px while the
+     table renders wider, spilling out of its track and UNDER the game log
+     next to it (which then steals its pointer events).
+     game-kit/docs/APP-PLAYBOOK.md gotcha 3. */
+  --board-width: min(94vw, 600px);
+}
+
+:root[data-theme="dark"] {
+  --accent-hover: #fcd34d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent-hover: #fcd34d;
+  }
+}
+
+/* ---------------------------------------------------------------------- *
+ * The table
+ * ---------------------------------------------------------------------- */
+
+.duel-table {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* --- round tracker ------------------------------------------------------ */
+
+.duel-table__tracker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.duel-table__round {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.duel-table__pips {
+  list-style: none;
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.duel-table__pip {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.duel-table__pip[data-state="done"] {
+  background: var(--muted);
+  border-color: var(--muted);
+}
+.duel-table__pip[data-state="current"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* --- the two bid cards -------------------------------------------------- */
+
+.duel-table__cards {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.duel-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.duel-card__who {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.duel-card--you .duel-card__who {
+  color: var(--p1);
+}
+.duel-card--them .duel-card__who {
+  color: var(--p2);
+}
+
+.duel-card__face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 4.5rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.duel-card__value {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 9vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Face-down: a hidden bid should read as "there is something here you
+   cannot see", not as an empty slot. */
+.duel-card[data-face="down"] .duel-card__face {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--surface-2),
+    var(--surface-2) 7px,
+    color-mix(in srgb, var(--border) 55%, var(--surface-2)) 7px,
+    color-mix(in srgb, var(--border) 55%, var(--surface-2)) 14px
+  );
+}
+.duel-card[data-face="down"] .duel-card__value {
+  color: var(--muted);
+  opacity: 0.65;
+}
+
+.duel-card__state {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  min-height: 1.1em;
+}
+
+.duel-card[data-locked] {
+  border-color: var(--accent);
+}
+/* An outcome always wins over "locked": once the round is settled, the card
+   should read as won or lost, not as still-committed. */
+.duel-card[data-outcome="won"] {
+  border-color: var(--win);
+  box-shadow: 0 0 0 1px var(--win) inset, var(--shadow-sm);
+}
+.duel-card[data-outcome="lost"] {
+  border-color: var(--border);
+  opacity: 0.7;
+}
+.duel-card[data-outcome="draw"] {
+  border-color: var(--border);
+}
+
+/* --- the middle (vs + the travelling stake) ----------------------------- */
+
+.duel-table__middle {
+  position: relative;
+  flex: 0 0 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.duel-table__vs {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.duel-table__stake {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.duel-table__stake[data-direction="to-you"] {
+  color: var(--win);
+  border-color: var(--win);
+}
+.duel-table__stake[data-direction="to-them"] {
+  color: var(--loss);
+  border-color: var(--loss);
+}
+.duel-table__stake[hidden] {
+  display: none;
+}
+
+/* --- commit + verdict --------------------------------------------------- */
+
+.duel-table__commit {
+  display: flex;
+}
+.duel-table__lock {
+  flex: 1;
+  font-size: 1.05rem;
+  padding: 0.8rem 1rem;
+}
+
+.duel-verdict {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  background: var(--surface);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.duel-verdict[hidden] {
+  display: none;
+}
+.duel-verdict[data-kind="courage"] {
+  border-left-color: var(--win);
+}
+.duel-verdict[data-kind="greed"] {
+  border-left-color: var(--loss);
+}
+.duel-verdict[data-kind="greed"][data-winner="them"] {
+  background: color-mix(in srgb, var(--loss) 10%, var(--surface));
+}
+.duel-verdict[data-kind="draw"] {
+  border-left-color: var(--muted);
+}
+/* Last round's verdict, still readable while this round is being bid — see
+   beginRound in ui/table.ts for why it is not simply wiped. */
+.duel-verdict[data-stale] {
+  opacity: 0.6;
+}
+
+/* ---------------------------------------------------------------------- *
+ * The greed hint (bid panel)
+ * ---------------------------------------------------------------------- */
+
+.greed-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+}
+.greed-hint[data-tone="risk"] {
+  border-color: color-mix(in srgb, var(--loss) 45%, var(--border));
+  color: var(--fg);
+}
+.greed-hint[data-tone="safe"] {
+  border-color: color-mix(in srgb, var(--win) 45%, var(--border));
+}
+
+/* ---------------------------------------------------------------------- *
+ * Game-log verdict chip
+ * ---------------------------------------------------------------------- */
+
+.log-verdict {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.log-verdict[data-verdict-kind="courage"] {
+  color: var(--win);
+  border-color: color-mix(in srgb, var(--win) 50%, var(--border));
+}
+.log-verdict[data-verdict-kind="greed"] {
+  color: var(--loss);
+  border-color: color-mix(in srgb, var(--loss) 50%, var(--border));
+}
+.log-verdict[data-verdict-kind="draw"] {
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Menu extras: the rules card and the invite link
+ * ---------------------------------------------------------------------- */
+
+.rules-card {
+  text-align: left;
+}
+.rules-card__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--fg);
+}
+
+.invite-link {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Standings preview (header trophy button — see ui/standings.ts)
+ * ---------------------------------------------------------------------- */
+
+.standings-trigger {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.5rem 0.65rem;
+}
+
+.standings-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, black 45%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.standings-panel {
+  width: min(420px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.standings-panel__record {
+  margin: 0;
+}
+.standings-panel__pct {
+  color: var(--muted);
+}
+.standings-panel__badge {
+  align-self: flex-start;
+}
+.standings-panel__ladder-list {
+  list-style: decimal;
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+.standings-panel__ladder-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.standings-panel__rating {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.standings-panel__close {
+  align-self: flex-end;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Motion — declared ONLY under `no-preference`, so a reduced-motion visitor
+ * never starts them at all (the JS waits in ui/table.ts collapse to zero for
+ * the same reason).
+ * ---------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The reveal: both cards turn face-up together. */
+  .duel-table[data-revealed] .duel-card[data-face="up"] .duel-card__face {
+    animation: greed-flip 350ms ease-out;
+    transform-origin: center;
+  }
+
+  /* The sting: a greedy bid is punished, and it should feel like it. */
+  .duel-table[data-round-verdict="greed"] .duel-card[data-outcome="lost"] {
+    animation: greed-sting 480ms ease-in-out;
+  }
+
+  /* Scoped to `:not([data-stale])` so the animation RE-RUNS every reveal:
+     the element persists across rounds (it carries the last verdict while
+     the next one is being bid), and a rule that always matches would only
+     ever animate once, when the element was created. */
+  .duel-verdict:not([data-stale]) {
+    animation: greed-verdict-in 260ms ease-out;
+  }
+
+  /* The stake travels to whoever took it. */
+  .duel-table__stake[data-direction="to-you"] {
+    animation: greed-stake-to-you 900ms ease-out;
+  }
+  .duel-table__stake[data-direction="to-them"] {
+    animation: greed-stake-to-them 900ms ease-out;
+  }
+
+  .duel-table__pip[data-state="current"] {
+    animation: greed-pip-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes greed-flip {
+  from {
+    transform: rotateY(90deg);
+    opacity: 0.2;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes greed-sting {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-7px) rotate(-1.2deg);
+  }
+  35% {
+    transform: translateX(6px) rotate(1deg);
+  }
+  55% {
+    transform: translateX(-4px) rotate(-0.6deg);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes greed-verdict-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes greed-stake-to-you {
+  from {
+    opacity: 0;
+    transform: translateX(3.5rem) scale(0.8);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-3.5rem) scale(1);
+  }
+}
+
+@keyframes greed-stake-to-them {
+  from {
+    opacity: 0;
+    transform: translateX(-3.5rem) scale(0.8);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(3.5rem) scale(1);
+  }
+}
+
+@keyframes greed-pip-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+}

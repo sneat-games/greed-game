@@ -1,0 +1,71 @@
+---
+import "@sneat/game-kit/theme.css";
+import "../styles/table.css";
+
+// The CrazyGames SDK v3 script is deliberately NOT in this head — see
+// game-kit's src/crazygames/sdk.ts doc comment: a static third-party tag
+// here is render-blocking, and off CrazyGames it buys nothing (the SDK
+// initialises to `environment: "disabled"` and does no work). The kit
+// injects it on demand instead, only on a CrazyGames surface.
+//
+// `preconnect` for the shared WebRTC relay is a hint, not a fetch: it warms
+// the TLS handshake for the vs-Friend flow without costing anything for a
+// vs-Bot-only visit.
+const { title = "The Greed Game — Sneat Games" } = Astro.props;
+const description =
+  "The Greed Game: a five-round hidden-bid duel where the bolder bid wins — unless it is more than double, and greed hands the round away. Play the bot offline, or a friend over WebRTC. Free, installable, no account needed to play solo.";
+const canonicalUrl = "https://greed.sneat.games/";
+const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="#ca8a04"/><text x="50" y="52" font-size="58" text-anchor="middle" dominant-baseline="central">💰</text></svg>`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Sneat Games" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Matches theme.css's light/dark token backgrounds, so the browser
+         chrome (address bar on mobile) never clashes with the page. -->
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+
+    <link rel="icon" href={`data:image/svg+xml,${favicon}`} />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://webrtc.sneat.games" crossorigin />
+
+    <script is:inline>
+      // Pre-paint theme application, so there is no flash of the wrong
+      // theme: this must run before first paint, which rules out importing
+      // game-kit's ui/theme.ts (a module round-trip) here. Mirrors that
+      // module's getThemePreference()/setTheme("light"|"dark") exactly —
+      // "system" (nothing stored) intentionally sets no attribute at all,
+      // matching theme.ts's own contract.
+      (function () {
+        try {
+          var v = localStorage.getItem("sneat-games-theme");
+          if (v === "light" || v === "dark") {
+            document.documentElement.setAttribute("data-theme", v);
+          }
+        } catch {
+          // localStorage unavailable (private-mode Safari etc.) — the
+          // prefers-color-scheme media query in theme.css still applies.
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

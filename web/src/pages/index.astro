@@ -1,0 +1,27 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="The Greed Game — Sneat Games">
+  <div class="app-shell">
+    <header class="site-header">
+      <div class="site-header__meta">
+        <h1 class="site-title">
+          <!-- Doubles as the way back to the mode-select menu; main.ts wires
+               the click so it resets a match in progress instead of only
+               dropping the #room fragment (see wireHomeLink there). -->
+          <a id="home-link" href="./" title="Back to the main menu">The Greed Game</a>
+        </h1>
+        <p class="site-byline">by <a href="https://sneat.games/" target="_blank" rel="noopener">Sneat Games</a></p>
+      </div>
+      <div id="header-actions"></div>
+    </header>
+    <p id="status">Loading…</p>
+    <div id="game" aria-live="polite"></div>
+    <div id="footer-slot"></div>
+  </div>
+  <script>
+    import { bootstrap } from "../main";
+    bootstrap();
+  </script>
+</Layout>

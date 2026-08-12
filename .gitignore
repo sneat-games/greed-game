@@ -13,3 +13,10 @@
 
 .idea
 specscore.local.yaml
+
+# Web workspace (Astro + TypeScript)
+web/node_modules/
+web/dist/
+web/.astro/
+web/test-results/
+web/playwright-report/
