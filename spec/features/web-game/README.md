@@ -11,7 +11,7 @@ status: Draft
 
 ## Summary
 
-The Greed Game as a two-player, five-round hidden-bid duel on the web at greed.sneat.games: courage wins, greed is punished, played against a local bot (offline-capable PWA) or a friend over WebRTC with commit-reveal secrecy.
+The Greed Game as a two-player, five-round hidden-bid duel on the web at sneat.games/greed/: courage wins, greed is punished, played against a local bot (offline-capable PWA) or a friend over WebRTC with commit-reveal secrecy.
 
 ## Problem
 

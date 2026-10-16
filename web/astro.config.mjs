@@ -3,7 +3,7 @@ import AstroPWA from "@vite-pwa/astro";
 
 export default defineConfig({
   // CrazyGames/itch.io accept a static HTML5 bundle; Static is the default
-  // output. See scripts/relativize-dist.mjs (run as part of `npm run
+  // output. See game-kit's sneat-relativize-dist bin (run as part of `npm run
   // build`) for how the resulting dist/ stays zippable from a non-root
   // path — Astro itself always emits root-absolute asset URLs, so that
   // script rewrites dist/index.html + manifest.webmanifest in place after
@@ -14,7 +14,7 @@ export default defineConfig({
     AstroPWA({
       registerType: "autoUpdate",
       // Auto-injection is OFF: main.ts registers the built service worker
-      // itself, gated to *.sneat.games ONLY — never on localhost (a worker
+      // itself, gated to sneat.games ONLY — never on localhost (a worker
       // precaches built asset hashes, so a local preview keeps serving the
       // PREVIOUS build after a rebuild) and never inside a CrazyGames/
       // itch.io iframe. See game-kit/docs/APP-PLAYBOOK.md gotcha 2.

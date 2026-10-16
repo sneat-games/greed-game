@@ -1,7 +1,7 @@
 # The Greed Game — Web
 
 Two-player web build of The Greed Game at
-[greed.sneat.games](https://greed.sneat.games): a hidden-bid duel where
+[sneat.games/greed/](https://sneat.games/greed/): a hidden-bid duel where
 bidding big is brave, but bidding *too* big is greedy — and greed loses.
 
 Client-only, like the rest of the [Sneat games family](https://sneat.games):
@@ -63,9 +63,17 @@ npm run relay        # the kit's local signalling relay, for vs-Friend
 
 | Surface | How |
 |---|---|
-| greed.sneat.games | `npm run host:deploy` (Cloudflare Worker `greed-game`) |
+| https://sneat.games/greed/ | `web-<sha12>` release from CI, pinned in sneat-games/sneat.games (see below) |
 | CrazyGames / itch.io | `npm run build && zip -r greed-game.zip dist/` |
 
-The service worker registers **only** on `*.sneat.games` — never on localhost
+This repo deploys nothing itself. On push to `main`, `.github/workflows/web-ci.yml`'s
+`release` job publishes the tested `dist/` as GitHub release `web-<sha12>`
+(`greed-web-<sha12>.tar.gz` + `.sha256`). sneat-games/sneat.games pins that
+release in `games.lock.json` and serves it at https://sneat.games/greed/ from its
+assets-only Worker (`node scripts/games-lock.mjs bump greed web-<sha12>` there).
+Saves from the retired `greed.sneat.games` subdomain arrive once via
+`#migrate=` (game-kit `consumeMigratedStorage()`).
+
+The service worker registers **only** on `sneat.games` — never on localhost
 (it would serve a stale build after a rebuild) and never inside a portal
 iframe.
