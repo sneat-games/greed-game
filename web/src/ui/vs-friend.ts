@@ -20,12 +20,13 @@ import {
   leftRoom,
   type PeerHandle,
   type WireMessage,
+  inviteBaseUrl,
 } from "@sneat/game-kit";
 import { MATCH_ROUNDS, START_BANKROLL } from "../engine/greedplay";
 import { runFriendMatch } from "./friend-match";
 
 /** Namespaces rooms on the shared relay. Unrelated to the game's domain
- *  (greed.sneat.games) — this is the protocol id, and it stays `greed-game`. */
+ *  (sneat.games/greed/) — this is the protocol id, and it stays `greed-game`. */
 const GAME_ID = "greed-game";
 const PROTOCOL = 1;
 const HELLO_TIMEOUT_MS = 20_000;
@@ -77,16 +78,11 @@ export async function runVsFriend(root: HTMLElement, opts: VsFriendOptions): Pro
   }
 }
 
-/** The invite link's base URL. Off `*.sneat.games` (CrazyGames, itch.io —
- *  see docs/DESIGN.md's "Distribution" section) the host's own origin isn't
- *  a working link for anyone else, so this falls back to the game's
- *  canonical subdomain instead. */
+/** The invite link's base URL: this page on sneat.games (or a local
+ *  preview), `https://sneat.games/greed/` inside a CrazyGames/itch.io
+ *  iframe — see game-kit's `inviteBaseUrl`. */
 function shareBaseUrl(): string {
-  const { hostname, origin, pathname } = window.location;
-  if (hostname.endsWith(".sneat.games") || hostname === "localhost" || hostname.startsWith("127.")) {
-    return `${origin}${pathname}`;
-  }
-  return "https://greed.sneat.games/";
+  return inviteBaseUrl("greed");
 }
 
 function waitForHello(peer: PeerHandle): Promise<boolean> {
