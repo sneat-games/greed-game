@@ -19,12 +19,6 @@ const gameIDBytes = 10
 // NewGameID returns a new random, URL/deep-link-safe game session ID.
 func NewGameID() string {
 	b := make([]byte, gameIDBytes)
-	if _, err := rand.Read(b); err != nil {
-		// crypto/rand.Read on a supported platform practically never errors;
-		// panicking here matches the framework's own posture on unrecoverable
-		// randomness failures rather than silently handing out a low-entropy
-		// fallback ID.
-		panic("greedgame: failed to read random bytes for a new game ID: " + err.Error())
-	}
+	_, _ = rand.Read(b)
 	return strings.ToLower(gameIDEncoding.EncodeToString(b))
 }

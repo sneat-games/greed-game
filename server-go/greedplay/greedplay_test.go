@@ -175,13 +175,13 @@ func TestResolve_HandComputedTables(t *testing.T) {
 		bids []int
 		want []int
 	}{
-		{[]int{1, 1}, []int{0, 0}},             // draw
-		{[]int{5, 5, 5}, []int{0, 0, 0}},       // all draws
-		{[]int{3, 6}, []int{-3, 3}},            // courage, higher(6) wins
-		{[]int{2, 5}, []int{2, -2}},            // greed, lower(2) wins
-		{[]int{10, 20}, []int{-10, 10}},        // boundary H==2L, higher wins
-		{[]int{10, 15, 40}, []int{0, 25, -25}}, // the oracle
-		{[]int{10, 11, 12}, []int{-10, -6, 16}}, // loss-cap example
+		{[]int{1, 1}, []int{0, 0}},                // draw
+		{[]int{5, 5, 5}, []int{0, 0, 0}},          // all draws
+		{[]int{3, 6}, []int{-3, 3}},               // courage, higher(6) wins
+		{[]int{2, 5}, []int{2, -2}},               // greed, lower(2) wins
+		{[]int{10, 20}, []int{-10, 10}},           // boundary H==2L, higher wins
+		{[]int{10, 15, 40}, []int{0, 25, -25}},    // the oracle
+		{[]int{10, 11, 12}, []int{-10, -6, 16}},   // loss-cap example
 		{[]int{3, 4, 5, 6}, []int{-3, -3, -2, 8}}, // 4-player, A & B both loss-capped
 	}
 	for _, c := range cases {
@@ -387,7 +387,7 @@ func TestApportion_SumsToTotalAndProportional(t *testing.T) {
 		weights []int
 		want    []int
 	}{
-		{10, []int{11, 12}, []int{5, 5}},   // near-equal -> 5/5
+		{10, []int{11, 12}, []int{5, 5}},    // near-equal -> 5/5
 		{3, []int{4, 5, 6}, []int{1, 1, 1}}, // A's split in [3,4,5,6]
 		{4, []int{5, 6}, []int{2, 2}},       // B's split in [3,4,5,6]
 		{7, []int{1, 1}, []int{4, 3}},       // odd leftover to first (tie on weight -> lower idx)
@@ -444,4 +444,28 @@ func equalInts(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+func TestWinner_String(t *testing.T) {
+	if Draw.String() != "Draw" {
+		t.Errorf("Draw.String() = %q, want 'Draw'", Draw.String())
+	}
+	if First.String() != "First" {
+		t.Errorf("First.String() = %q, want 'First'", First.String())
+	}
+	if Second.String() != "Second" {
+		t.Errorf("Second.String() = %q, want 'Second'", Second.String())
+	}
+	if Winner(99).String() != "Winner(99)" {
+		t.Errorf("Winner(99).String() = %q, want 'Winner(99)'", Winner(99).String())
+	}
+}
+
+func TestApportion_ZeroWeight(t *testing.T) {
+	got := apportion(10, []int{0, 0})
+	for _, s := range got {
+		if s != 0 {
+			t.Errorf("expected 0 share, got %d", s)
+		}
+	}
 }
